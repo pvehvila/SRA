@@ -25,39 +25,56 @@
       touch-action: manipulation;
     }
     .target {
-      position: absolute;
-      left: 50%; top: 50%;
-      transform: translate(-50%, -50%);
-      box-sizing: border-box;
-      background: #d8c9a5; /* “kartonki” */
-      border: 8px solid #3b2e1e;
-      border-radius: 10px;
-      box-shadow: 0 10px 40px rgba(0,0,0,.45);
+        position: absolute;
+        left: 50%; top: 50%;
+        transform: translate(-50%, -50%);
+        box-sizing: border-box;
+        background: transparent;   /* SVG hoitaa värin */
+        border: none;              /* SVG hoitaa reunat */
+        border-radius: 0;
+        box-shadow: 0 10px 40px rgba(0,0,0,.45);
     }
-    .target .head {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      top: 6%;
-      width: 44%;
-      height: 18%;
-      border: 5px solid #3b2e1e;
-      border-radius: 10px;
-      background: rgba(0,0,0,0.04);
-      box-sizing: border-box;
+
+    .targetSvg {
+        width: 100%;
+        height: 100%;
+        display: block;
     }
-    .target .body {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      top: 27%;
-      width: 70%;
-      height: 58%;
-      border: 5px solid #3b2e1e;
-      border-radius: 10px;
-      background: rgba(0,0,0,0.02);
-      box-sizing: border-box;
+
+        /* Täyttö (taulun “kartonki”) */
+    .outer {
+        fill: #8b5a0a;             /* ruskea, lähellä esimerkkiä */
+        stroke: rgba(0,0,0,0.55);
+        stroke-width: 6;
+        stroke-linejoin: round;
     }
+
+        /* Katkoviivat (musta) */
+    .dash {
+        fill: none;
+        stroke: rgba(0,0,0,0.75);
+        stroke-width: 4;
+        stroke-dasharray: 12 10;
+        stroke-linecap: butt;
+        stroke-linejoin: round;
+     }
+
+        /* Katkoviivat (sinertävä A-alueen rajaus kuten esimerkissä) */
+    .dashBlue {
+        fill: none;
+        stroke: rgba(0,80,120,0.8);
+        stroke-width: 4;
+        stroke-dasharray: 12 10;
+        stroke-linejoin: round;
+     }
+
+        /* Kirjaimet */
+    .label {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        font-size: 64px;
+        fill: rgba(40,40,40,0.85);
+    }
+
     .hud {
       position: fixed; left: 12px; right: 12px; top: 12px;
       display:flex; gap: 8px; align-items:center; justify-content: space-between;
@@ -130,9 +147,43 @@
       </div>
     </div>
     <div id="target" class="target" aria-label="SRA taulu">
-      <div class="head"></div>
-      <div class="body"></div>
+        <svg class="targetSvg" viewBox="0 0 300 620" role="img" aria-label="SRA IPSC -taulu">
+            <!-- Taulun ulkokehys -->
+            <path class="outer"
+            d="M110 0 H190 V120 L260 190 V430 L220 600 H80 L40 430 V190 L110 120 Z" />
+
+            <!-- Ulompi katkoviiva (D-alueen raja, “offset” sisäänpäin) -->
+            <path class="dash"
+            d="M118 14 H182 V116 L248 188 V424 L212 586 H88 L52 424 V188 L118 116 Z" />
+
+            <!-- A-alue: keskisuorakaide -->
+            <rect class="dashBlue" x="112" y="150" width="76" height="325" rx="6" />
+
+            <!-- B-alue: pään suorakaide -->
+            <rect class="dash" x="112" y="18" width="76" height="98" rx="6" />
+
+            <!-- C-alue: vasen ja oikea pystyalue -->
+            <rect class="dash" x="78" y="210" width="70" height="235" rx="10" />
+            <rect class="dash" x="152" y="210" width="70" height="235" rx="10" />
+
+            <!-- C-alue: alakeskellä (monikulmio) -->
+            <path class="dash"
+            d="M95 455 L205 455 L225 505 L195 565 H105 L75 505 Z" />
+
+            <!-- Kirjaimet -->
+            <text class="label" x="150" y="335" text-anchor="middle">A</text>
+            <text class="label" x="150" y="80" text-anchor="middle">B</text>
+
+            <text class="label" x="115" y="350" text-anchor="middle">C</text>
+            <text class="label" x="185" y="350" text-anchor="middle">C</text>
+            <text class="label" x="150" y="535" text-anchor="middle">C</text>
+
+            <text class="label" x="60" y="350" text-anchor="middle">D</text>
+            <text class="label" x="240" y="350" text-anchor="middle">D</text>
+            <text class="label" x="150" y="595" text-anchor="middle">D</text>
+        </svg>
     </div>
+
   </div>
 
 <script>
