@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SRA-taulu (minimi)</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#0b0b0b; color:#f2f2f2; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 16px; }
+    .card { background:#151515; border:1px solid #2a2a2a; border-radius: 12px; padding: 14px; }
+    label { display:block; font-size: 14px; margin: 10px 0 6px; color:#d7d7d7; }
+    input { width: 100%; padding: 10px 12px; font-size: 16px; border-radius: 10px; border:1px solid #333; background:#0f0f0f; color:#fff; }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .row3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    button { width: 100%; margin-top: 12px; padding: 12px 14px; font-size: 16px; border-radius: 10px; border: 1px solid #3a3a3a; background:#1e1e1e; color:#fff; }
+    button:active { transform: translateY(1px); }
+    .hint { font-size: 13px; color:#bdbdbd; margin-top: 10px; line-height: 1.35; }
+    .warn { font-size: 13px; color:#ffd27a; margin-top: 10px; line-height: 1.35; }
+    .screen {
+      position: fixed; inset: 0;
+      display: none;
+      background: #0b0b0b;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+    .target {
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      box-sizing: border-box;
+      background: #d8c9a5; /* “kartonki” */
+      border: 8px solid #3b2e1e;
+      border-radius: 10px;
+      box-shadow: 0 10px 40px rgba(0,0,0,.45);
+    }
+    .target .head {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 6%;
+      width: 44%;
+      height: 18%;
+      border: 5px solid #3b2e1e;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.04);
+      box-sizing: border-box;
+    }
+    .target .body {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 27%;
+      width: 70%;
+      height: 58%;
+      border: 5px solid #3b2e1e;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.02);
+      box-sizing: border-box;
+    }
+    .hud {
+      position: fixed; left: 12px; right: 12px; top: 12px;
+      display:flex; gap: 8px; align-items:center; justify-content: space-between;
+      pointer-events: none;
+    }
+    .pill {
+      pointer-events: auto;
+      background: rgba(20,20,20,.75);
+      border: 1px solid rgba(255,255,255,.12);
+      color:#fff;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      backdrop-filter: blur(6px);
+    }
+    .pill button {
+      width: auto; margin: 0; padding: 8px 10px; font-size: 13px;
+      border-radius: 999px; background: rgba(30,30,30,.85);
+    }
+    .pill small { color:#cfcfcf; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 style="margin: 8px 0 12px; font-size: 20px;">SRA-taulu TV:lle (minimiversio)</h1>
+
+    <div class="card">
+      <div class="row3">
+        <div>
+          <label for="tvIn">TV:n koko (tuumaa)</label>
+          <input id="tvIn" type="number" inputmode="decimal" min="20" max="120" step="0.1" value="65">
+        </div>
+        <div>
+          <label for="viewM">Katseluetäisyys (m)</label>
+          <input id="viewM" type="number" inputmode="decimal" min="0.5" max="20" step="0.1" value="3.0">
+        </div>
+        <div>
+          <label for="distM">Simuloitu etäisyys tauluun (m)</label>
+          <input id="distM" type="number" inputmode="decimal" min="1" max="50" step="0.5" value="10">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="tW">Taulun leveys (cm) – oletus 45</label>
+          <input id="tW" type="number" inputmode="decimal" min="10" max="200" step="0.1" value="45">
+        </div>
+        <div>
+          <label for="tH">Taulun korkeus (cm) – oletus 75</label>
+          <input id="tH" type="number" inputmode="decimal" min="10" max="250" step="0.1" value="75">
+        </div>
+      </div>
+
+      <button id="btnShow">Näytä taulu</button>
+
+      <div class="hint">
+        Oletus olettaa 16:9 TV. Taulu skaalataan kulmakoon mukaan: “miltä taulu näyttäisi” valitulla etäisyydellä.
+        Tässä vaiheessa piirretään vain yksi taulu (runko + yksinkertaistettu head/body-laatikko).
+      </div>
+
+      <div id="msg" class="warn" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div id="screen" class="screen">
+    <div class="hud">
+      <div class="pill" id="info"></div>
+      <div class="pill">
+        <button id="btnBack" type="button">Takaisin</button>
+      </div>
+    </div>
+    <div id="target" class="target" aria-label="SRA taulu">
+      <div class="head"></div>
+      <div class="body"></div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // Oletus: 16:9
+  function tvDimsCm(diagonalIn) {
+    const diagCm = diagonalIn * 2.54;
+    const wRatio = 16, hRatio = 9;
+    const k = Math.sqrt(wRatio*wRatio + hRatio*hRatio);
+    return {
+      wCm: diagCm * (wRatio / k),
+      hCm: diagCm * (hRatio / k)
+    };
+  }
+
+  // Kulmakoon säilytys: screenSize = viewingDistance * realSize / targetDistance
+  function scaledSizeCm(viewM, realCm, distM) {
+    const viewCm = viewM * 100.0;
+    const distCm = distM * 100.0;
+    return viewCm * (realCm / distCm);
+  }
+
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+  function showMessage(text) {
+    const msg = $("msg");
+    msg.textContent = text;
+    msg.style.display = text ? "block" : "none";
+  }
+
+  function render() {
+    showMessage("");
+
+    const tvIn = Number($("tvIn").value);
+    const viewM = Number($("viewM").value);
+    const distM = Number($("distM").value);
+    const tW = Number($("tW").value);
+    const tH = Number($("tH").value);
+
+    if (!(tvIn > 0 && viewM > 0 && distM > 0 && tW > 0 && tH > 0)) {
+      showMessage("Tarkista syötteet: kaikkien arvojen tulee olla positiivisia.");
+      return;
+    }
+
+    const tv = tvDimsCm(tvIn);
+
+    // Taulun fyysinen koko näytöllä (cm)
+    const wantWcm = scaledSizeCm(viewM, tW, distM);
+    const wantHcm = scaledSizeCm(viewM, tH, distM);
+
+    // Muunnetaan prosenttiosuuksiksi näytön leveydestä/korkeudesta
+    let wPct = (wantWcm / tv.wCm) * 100.0;
+    let hPct = (wantHcm / tv.hCm) * 100.0;
+
+    // Jos ei mahdu, skaalataan yhtenäisesti alas (säilyttäen mittasuhde)
+    const maxPct = 92; // jätetään marginaalia (HUD + overscan)
+    const scale = Math.min(1, maxPct / Math.max(wPct, hPct));
+    if (scale < 1) {
+      wPct *= scale;
+      hPct *= scale;
+      showMessage("Huomio: laskettu taulu ei mahtunut ruudulle. Skaalattiin alas (mittasuhde säilytetty).");
+    }
+
+    // Asetetaan CSS-koon vh/vw:llä
+    const target = $("target");
+    target.style.width = wPct.toFixed(3) + "vw";
+    target.style.height = hPct.toFixed(3) + "vh";
+
+    // Näytetään info HUDissa
+    const info = $("info");
+    info.innerHTML =
+      `<div><strong>${tvIn}"</strong> / katselu ${viewM} m / simuloitu ${distM} m</div>` +
+      `<small>Taulu ruudulla: ~${wantWcm.toFixed(1)} × ${wantHcm.toFixed(1)} cm (ennen mahdollisia rajoituksia)</small>`;
+
+    $("screen").style.display = "block";
+
+    // Pyydä fullscreen jos selain sallii (Chromecastissa usein toimii)
+    const el = document.documentElement;
+    if (el.requestFullscreen) { el.requestFullscreen().catch(() => {}); }
+  }
+
+  $("btnShow").addEventListener("click", render);
+  $("btnBack").addEventListener("click", () => {
+    $("screen").style.display = "none";
+    showMessage("");
+    if (document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    }
+  });
+})();
+</script>
+</body>
+</html>
